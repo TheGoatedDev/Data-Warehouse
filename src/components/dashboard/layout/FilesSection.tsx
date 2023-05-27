@@ -43,6 +43,17 @@ const Item: ComponentWithChild<{
 };
 
 export const FilesSection: FC = () => {
+    const theme = useMantineTheme();
+    const iconMode = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
+
+    if (iconMode) {
+        return (
+            <Navbar.Section grow>
+                <></>
+            </Navbar.Section>
+        );
+    }
+
     return (
         <Navbar.Section grow>
             <Input

@@ -4,6 +4,7 @@ import {
     Divider,
     Group,
     Input,
+    Loader,
     NavLink,
     Navbar,
     RingProgress,
@@ -23,10 +24,22 @@ import {
 } from "@tabler/icons-react";
 import { useSession } from "next-auth/react";
 import { FC } from "react";
-import StatsSection from "./StatsSection";
-import LinksSection from "./LinksSection";
+
 import { useAutoAnimate } from "@formkit/auto-animate/react";
-import FilesSection from "./FilesSection";
+
+import dynamic from "next/dynamic";
+
+const StatsSection = dynamic(() => import("./StatsSection"), {
+    loading: () => <Loader />,
+});
+
+const LinksSection = dynamic(() => import("./LinksSection"), {
+    loading: () => <Loader />,
+});
+
+const FilesSection = dynamic(() => import("./FilesSection"), {
+    loading: () => <Loader />,
+});
 
 export const DashboardNavbar: FC = () => {
     const { status, data } = useSession();
