@@ -12,13 +12,42 @@ import {
 import { useMediaQuery } from "@mantine/hooks";
 import { IconDatabase } from "@tabler/icons-react";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
-import { FC } from "react";
+import { FC, useMemo } from "react";
+import { trpcClient } from "@/libs/trpcClient";
+import { get } from "http";
 
 export const StatsSection: FC = () => {
     const theme = useMantineTheme();
     const iconMode = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
 
     const [animationParent] = useAutoAnimate();
+
+    const getStorage = trpcClient.getStorage.useQuery();
+
+    const usedStorage = useMemo(
+        () => (getStorage.data ? getStorage.data?.usedStorage : 0),
+        [getStorage.data]
+    );
+
+    const maxStorage = useMemo(
+        () => (getStorage.data ? getStorage.data?.maxStorage : 0),
+        [getStorage.data]
+    );
+
+    const percentage = useMemo(
+        () =>
+            getStorage.data
+                ? (getStorage.data?.usedStorage / getStorage.data?.maxStorage) *
+                  100
+                : 0,
+        [getStorage.data]
+    );
+
+    const storageText = useMemo(() => {
+        return `${(usedStorage / 1000000000).toFixed(2)}GB / ${(
+            maxStorage / 1000000000
+        ).toFixed(2)}GB`;
+    }, [maxStorage, usedStorage]);
 
     return (
         <Navbar.Section
@@ -41,11 +70,12 @@ export const StatsSection: FC = () => {
                     label={
                         <Stack spacing={0}>
                             <Text size={"sm"}>Total Storage Used</Text>
-                            <Text size={"xs"}>1.5 GB of 1 TB</Text>
+                            <Text size={"xs"}>{storageText}</Text>
                         </Stack>
                     }
                     withArrow
                     disabled={!iconMode}
+                    withinPortal
                 >
                     <RingProgress
                         size={45}
@@ -59,7 +89,7 @@ export const StatsSection: FC = () => {
                             {
                                 color: "orange",
 
-                                value: 50,
+                                value: percentage,
                             },
                         ]}
                     />
@@ -71,7 +101,7 @@ export const StatsSection: FC = () => {
                                 Total Storage Used
                             </Text>
                             <Text size={"xs"} color={"dimmed"}>
-                                1.5 GB of 1 TB
+                                {storageText}
                             </Text>
                         </Stack>
                     </>

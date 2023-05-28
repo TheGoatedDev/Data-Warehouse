@@ -21,9 +21,11 @@ import {
     IconSearch,
 } from "@tabler/icons-react";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
-import { FC } from "react";
+import { FC, useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { IconFolder } from "@tabler/icons-react";
+import { trpcClient } from "@/libs/trpcClient";
+import IFileSystemItem from "@/types/FileSystemItem";
 
 const Item: ComponentWithChild<{
     name: string;
@@ -31,11 +33,18 @@ const Item: ComponentWithChild<{
 }> = ({ children, name, path }) => {
     return (
         <NavLink
-            label={<Text size={"xs"}>{name}</Text>}
+            label={
+                <Tooltip label={name}>
+                    <Text size={"xs"} lineClamp={1}>
+                        {name}
+                    </Text>
+                </Tooltip>
+            }
             p={0}
             px="sm"
             py={1}
             icon={children ? <IconFolder size={16} /> : <IconFile size={16} />}
+            childrenOffset={"xs"}
         >
             {children}
         </NavLink>
@@ -45,6 +54,28 @@ const Item: ComponentWithChild<{
 export const FilesSection: FC = () => {
     const theme = useMantineTheme();
     const iconMode = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
+
+    const getFiles = trpcClient.getFiles.useQuery();
+
+    const [files, setFiles] = useState<React.ReactNode[]>([]);
+
+    useEffect(() => {
+        // Map the files to the file tree using the Item component and run it through a recursive function for each folder
+        const mapFiles = (files: IFileSystemItem[]) => {
+            return files.map((file, i) => {
+                return (
+                    <Item key={i} name={file.Name} path={file.Path}>
+                        {file.items && mapFiles(file.items)}
+                    </Item>
+                );
+            });
+        };
+
+        if (getFiles.data) {
+            console.log(getFiles.data);
+            setFiles(mapFiles(getFiles.data));
+        }
+    }, [getFiles.data]);
 
     if (iconMode) {
         return (
@@ -63,12 +94,10 @@ export const FilesSection: FC = () => {
                 rightSection={<IconSearch size={18} />}
             />
             <Text size={"xs"} weight={"bold"} px={"sm"} mt={4} color="dimmed">
-                File Tree
+                Overview
             </Text>
             <Item name="~" path="/">
-                <Item name="Documents" path="/documents">
-                    <Item name="Project.pdf" path="/documents/Project.pdf" />
-                </Item>
+                {files}
             </Item>
         </Navbar.Section>
     );
