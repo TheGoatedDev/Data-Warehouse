@@ -18,27 +18,66 @@ import { IconDatabase, IconFile, IconUpload, IconX } from "@tabler/icons-react";
 import { Dropzone, DropzoneProps, IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import DashboardLayout from "@/layouts/DashboardLayout";
 import { trpcClient } from "@/libs/trpcClient";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import axios from "axios";
 import { notifications } from "@mantine/notifications";
+import IFileSystemItem from "@/types/FileSystemItem";
 
 const DashboardFilesPage: NextPage = () => {
     const theme = useMantineTheme();
 
-    const [path, setPath] = useState<string>("");
+    const [currentPath, setCurrentPath] = useState<string>("");
 
     const trpcContext = trpcClient.useContext();
     const getFileSignedUploadURL =
         trpcClient.getFileSignedUploadURL.useMutation();
+
+    const getFiles = trpcClient.getFiles.useQuery();
+
+    // Flatten items, even nested ones
+    const flattenItems = useMemo(() => {
+        const items: IFileSystemItem[] = [];
+
+        const flatten = (item: IFileSystemItem) => {
+            items.push(item);
+
+            if (item.Type === "folder") {
+                item.items?.forEach((child) => {
+                    flatten(child);
+                });
+            }
+        };
+
+        getFiles.data?.forEach((item) => {
+            flatten(item);
+        });
+
+        return items;
+    }, [getFiles.data]);
 
     return (
         <DashboardLayout>
             <Dropzone.FullScreen
                 onDrop={async (files) => {
                     const promises = files.map(async (file) => {
+                        // Check if file already exist in the current directory
+
+                        const fileExists = flattenItems.some(
+                            (item) => item.Path === currentPath + file.name
+                        );
+
+                        if (fileExists) {
+                            notifications.show({
+                                title: "File already exists",
+                                message: `File ${file.name} already exists in this directory`,
+                                color: "red",
+                            });
+                            return;
+                        }
+
                         const url = await getFileSignedUploadURL.mutateAsync({
                             fileName: file.name,
-                            path,
+                            path: currentPath,
                         });
 
                         const response = await axios.put(url, file, {
