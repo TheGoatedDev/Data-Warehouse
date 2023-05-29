@@ -4,6 +4,7 @@ import { MantineProvider } from "@mantine/core";
 import { SessionProvider } from "next-auth/react";
 import { trpcClient } from "@/libs/trpcClient";
 import { RouterTransition } from "@/components/shared/RouterTransition";
+import { Notifications } from "@mantine/notifications";
 
 function App(props: AppProps) {
     const { Component, pageProps } = props;
@@ -29,6 +30,7 @@ function App(props: AppProps) {
             >
                 <SessionProvider session={pageProps.session}>
                     <RouterTransition />
+                    <Notifications />
                     <Component {...pageProps} />
                 </SessionProvider>
             </MantineProvider>

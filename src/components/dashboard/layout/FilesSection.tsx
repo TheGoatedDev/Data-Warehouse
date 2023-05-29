@@ -28,6 +28,7 @@ import { useRouter } from "next/router";
 import { IconFolder } from "@tabler/icons-react";
 import { trpcClient } from "@/libs/trpcClient";
 import IFileSystemItem from "@/types/FileSystemItem";
+import { sortItemsDeep } from "@/libs/sortItems";
 
 const Item: ComponentWithChild<{
     name: string;
@@ -64,7 +65,7 @@ export const FilesSection: FC = () => {
     useEffect(() => {
         // Map the files to the file tree using the Item component and run it through a recursive function for each folder
         const mapFiles = (files: IFileSystemItem[]) => {
-            return files.map((file, i) => {
+            return sortItemsDeep(files).map((file, i) => {
                 return (
                     <Item key={i} name={file.Name} path={file.Path}>
                         {file.items && mapFiles(file.items)}
