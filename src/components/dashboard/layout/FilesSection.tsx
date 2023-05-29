@@ -11,11 +11,13 @@ import {
     ThemeIcon,
     Input,
     NavLink,
+    ActionIcon,
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import {
     Icon,
     IconDatabase,
+    IconDownload,
     IconFile,
     IconHome,
     IconSearch,

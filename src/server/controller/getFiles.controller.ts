@@ -3,6 +3,7 @@ import IFileSystemItem from "@/types/FileSystemItem";
 import { ListObjectsCommand } from "@aws-sdk/client-s3";
 import { trpc } from "../trpc";
 import { ControllerLogic } from "@/types/ControllerLogic";
+import isAuthenticatedMiddleware from "../middleware/isAuthenticated.middleware";
 
 export const getFilesControllerLogic: ControllerLogic<
     IFileSystemItem[]
@@ -72,6 +73,8 @@ export const getFilesControllerLogic: ControllerLogic<
     return nestedFiles ?? [];
 };
 
-export const getFilesController = trpc.procedure.query(
-    async ({ input, ctx }) => await getFilesControllerLogic({ input, ctx })
-);
+export const getFilesController = trpc.procedure
+    .use(isAuthenticatedMiddleware)
+    .query(
+        async ({ input, ctx }) => await getFilesControllerLogic({ input, ctx })
+    );

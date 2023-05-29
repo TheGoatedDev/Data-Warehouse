@@ -3,6 +3,7 @@ import IFileSystemItem from "@/types/FileSystemItem";
 import { ListObjectsCommand } from "@aws-sdk/client-s3";
 import { trpc } from "../trpc";
 import { ControllerLogic } from "@/types/ControllerLogic";
+import isAuthenticatedMiddleware from "../middleware/isAuthenticated.middleware";
 
 export const getStorageControllerLogic: ControllerLogic<{
     maxStorage: number;
@@ -18,7 +19,7 @@ export const getStorageControllerLogic: ControllerLogic<{
     const result = await s3Client.send(listObjects);
 
     return {
-        maxStorage: 1000000000000,
+        maxStorage: 10000000000,
         usedStorage:
             result.Contents?.reduce((acc, file) => {
                 return acc + (file.Size ?? 0);
@@ -26,6 +27,9 @@ export const getStorageControllerLogic: ControllerLogic<{
     };
 };
 
-export const getStorageController = trpc.procedure.query(
-    async ({ input, ctx }) => await getStorageControllerLogic({ input, ctx })
-);
+export const getStorageController = trpc.procedure
+    .use(isAuthenticatedMiddleware)
+    .query(
+        async ({ input, ctx }) =>
+            await getStorageControllerLogic({ input, ctx })
+    );
