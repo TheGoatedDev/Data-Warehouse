@@ -4,11 +4,15 @@ import { ListObjectsCommand } from "@aws-sdk/client-s3";
 import { trpc } from "../trpc";
 import { ControllerLogic } from "@/types/ControllerLogic";
 import isAuthenticatedMiddleware from "../middleware/isAuthenticated.middleware";
+import { z } from "zod";
 
 export const getFilesControllerLogic: ControllerLogic<
-    IFileSystemItem[]
-> = async ({ ctx }) => {
-    const Prefix = `${ctx.session?.user?.email}/`;
+    IFileSystemItem[],
+    {
+        basePath?: string;
+    }
+> = async ({ ctx, input }) => {
+    const Prefix = `${ctx.session?.user?.email}/${input.basePath ?? ""}`;
 
     const listObjects = new ListObjectsCommand({
         Bucket: process.env.S3_BUCKET,
@@ -75,6 +79,11 @@ export const getFilesControllerLogic: ControllerLogic<
 
 export const getFilesController = trpc.procedure
     .use(isAuthenticatedMiddleware)
+    .input(
+        z.object({
+            basePath: z.string().optional(),
+        })
+    )
     .query(
         async ({ input, ctx }) => await getFilesControllerLogic({ input, ctx })
     );

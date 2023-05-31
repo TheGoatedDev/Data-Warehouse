@@ -58,7 +58,7 @@ export const FilesSection: FC = () => {
     const theme = useMantineTheme();
     const iconMode = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
 
-    const getFiles = trpcClient.getFiles.useQuery();
+    const getFiles = trpcClient.getFiles.useQuery({});
 
     const [files, setFiles] = useState<React.ReactNode[]>([]);
 

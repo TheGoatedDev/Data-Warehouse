@@ -1,4 +1,6 @@
 import {
+    ActionIcon,
+    Anchor,
     AppShell,
     Button,
     Container,
@@ -6,15 +8,25 @@ import {
     Group,
     Header,
     NavLink,
+    Paper,
     Text,
     ThemeIcon,
     Title,
+    Tooltip,
     useMantineTheme,
 } from "@mantine/core";
 import { NextPage } from "next";
 import { useSession, signIn, signOut } from "next-auth/react";
 import Link from "next/link";
-import { IconDatabase, IconFile, IconUpload, IconX } from "@tabler/icons-react";
+import {
+    IconDatabase,
+    IconDownload,
+    IconFile,
+    IconFolder,
+    IconTrash,
+    IconUpload,
+    IconX,
+} from "@tabler/icons-react";
 import { Dropzone, DropzoneProps, IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import DashboardLayout from "@/layouts/DashboardLayout";
 import { trpcClient } from "@/libs/trpcClient";
@@ -22,6 +34,9 @@ import { useMemo, useState } from "react";
 import axios from "axios";
 import { notifications } from "@mantine/notifications";
 import IFileSystemItem from "@/types/FileSystemItem";
+import { sortItemsDeep } from "@/libs/sortItems";
+import { set } from "zod";
+import { FileItem } from "@/components/dashboard/files/FileItem";
 
 const DashboardFilesPage: NextPage = () => {
     const theme = useMantineTheme();
@@ -32,7 +47,9 @@ const DashboardFilesPage: NextPage = () => {
     const getFileSignedUploadURL =
         trpcClient.getFileSignedUploadURL.useMutation();
 
-    const getFiles = trpcClient.getFiles.useQuery();
+    const getFiles = trpcClient.getFiles.useQuery({
+        basePath: currentPath,
+    });
 
     // Flatten items, even nested ones
     const flattenItems = useMemo(() => {
@@ -148,8 +165,51 @@ const DashboardFilesPage: NextPage = () => {
                     </div>
                 </Group>
             </Dropzone.FullScreen>
-            <Container size={"lg"}>
-                <Title order={1}>Files</Title>
+            <Container
+                size={"lg"}
+                h={"100%"}
+                sx={() => ({
+                    display: "flex",
+                    flexDirection: "column",
+                })}
+            >
+                <Title mb="md">My Files</Title>
+                <Paper shadow="sm" p="md" withBorder h={"100%"}>
+                    {currentPath !== "" && (
+                        <FileItem
+                            item={{
+                                Name: "..",
+                                Path: "",
+                                Type: "folder",
+                                items: [],
+                                Size: 0,
+                                LastModified: new Date(),
+                                StorageClass: "",
+                            }}
+                            onClickFolder={() => {
+                                const backPath = currentPath
+                                    .split("/")
+                                    .slice(0, -2)
+                                    .join("/");
+                                console.log(backPath);
+                                setCurrentPath(
+                                    backPath + (backPath !== "" ? "/" : "")
+                                );
+                            }}
+                        />
+                    )}
+                    {sortItemsDeep(getFiles.data ?? []).map((item) => (
+                        <FileItem
+                            key={item.Path}
+                            item={item}
+                            onClickFolder={() => {
+                                console.log(currentPath);
+                                setCurrentPath((prev) => prev + item.Path);
+                                console.log(currentPath);
+                            }}
+                        />
+                    ))}
+                </Paper>
             </Container>
         </DashboardLayout>
     );
